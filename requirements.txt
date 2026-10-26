@@ -1,0 +1,15 @@
+# Núcleo
+simpy==4.1.2          # simulação de eventos discretos
+ortools==9.15.6755    # CP-SAT: alocação de frota e sequenciamento de talhões
+pydantic==2.14.1      # validação da configuração da operação
+numpy==2.4.6
+pandas==3.1.0
+# Interface e gráficos
+streamlit==1.66.1     # interface analítica
+plotly==7.1.0         # gráficos interativos
+# Relatórios e exportação
+reportlab==5.1.0      # PDF
+matplotlib==3.11.2    # gráficos estáticos do PDF (e fonte DejaVu com símbolos)
+openpyxl==3.1.5       # Excel (leitura e escrita)
+# Testes
+pytest==9.1.1

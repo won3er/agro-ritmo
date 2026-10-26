@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<style>
+  :root { --bg:#0E1316; --panel:#151C21; --borda:#25313A; --txt:#E4EAEF; --suave:#93A1AD; --verde:#2FA866; --ambar:#F0A73A; --verm:#E0524D; --azul:#3D7BE0; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; background:transparent; color:var(--txt); font-family: Inter, "Segoe UI", system-ui, sans-serif; font-size:13px; }
+  #app { height: __ALTURA__px; display:flex; flex-direction:column; gap:8px; }
+  .top { display:flex; gap:8px; align-items:stretch; }
+  .clock { background:var(--panel); border:1px solid var(--borda); border-radius:8px; padding:6px 12px; min-width:168px; }
+  .clock .r { font-size:24px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:.02em; }
+  .clock .s { color:var(--suave); font-size:11px; margin-top:1px; min-height:14px; }
+  .kpis { flex:1; display:grid; grid-template-columns: repeat(8, minmax(0,1fr)); gap:6px; }
+  .k { background:var(--panel); border:1px solid var(--borda); border-radius:8px; padding:5px 8px; overflow:hidden; }
+  .k .l { color:var(--suave); font-size:10px; text-transform:uppercase; letter-spacing:.04em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .k .v { font-size:16px; font-weight:650; font-variant-numeric:tabular-nums; margin-top:2px; white-space:nowrap; }
+  .k .v small { font-size:11px; color:var(--suave); font-weight:400; margin-left:2px; }
+  .k.alerta { border-color:#6b4a14; } .k.alerta .v { color:var(--ambar); }
+  .k.critico { border-color:#6b2522; } .k.critico .v { color:var(--verm); }
+  .ctl { display:flex; gap:6px; align-items:center; background:var(--panel); border:1px solid var(--borda); border-radius:8px; padding:6px 8px; flex-wrap:wrap; }
+  button, select { background:#1d262d; color:var(--txt); border:1px solid #33424d; border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer; font-family:inherit; }
+  button:hover, select:hover { border-color:#4b5f6d; }
+  button.play { background:var(--verde); border-color:var(--verde); color:#06130b; font-weight:700; min-width:92px; }
+  .sep { width:1px; height:22px; background:var(--borda); margin:0 4px; }
+  input[type=range] { flex:1; min-width:180px; accent-color: var(--verde); }
+  .lbl { color:var(--suave); font-size:11px; }
+  .main { flex:1; display:flex; gap:8px; min-height:0; }
+  .cvwrap { flex:1; position:relative; background:var(--panel); border:1px solid var(--borda); border-radius:8px; overflow:hidden; min-width:0; }
+  canvas { width:100%; height:100%; display:block; }
+  .side { width:250px; background:var(--panel); border:1px solid var(--borda); border-radius:8px; padding:8px 10px; display:flex; flex-direction:column; min-height:0; }
+  .side .ttl { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--suave); margin-bottom:6px; }
+  #ticker { overflow:hidden; flex:1; display:flex; flex-direction:column; gap:5px; }
+  .ev { font-size:11.5px; line-height:1.3; border-left:3px solid #33424d; padding:2px 0 2px 7px; }
+  .ev .t { color:var(--suave); font-variant-numeric:tabular-nums; margin-right:4px; }
+  .ev .r { font-weight:600; margin-right:3px; }
+  .legend { display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11px; color:var(--suave); padding:0 2px; }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:-1px; }
+  #tip { position:absolute; pointer-events:none; background:#0b1013ee; border:1px solid #3a4a55; border-radius:6px; padding:6px 8px; font-size:12px; display:none; z-index:5; max-width:260px; line-height:1.35; }
+  .prov { color:var(--suave); font-size:10.5px; }
+  @media (max-width: 1100px) { .kpis { grid-template-columns: repeat(4, minmax(0,1fr)); } .side { width:220px; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top">
+    <div class="clock"><div class="r" id="relogio">D1 00:00</div><div class="s" id="cond"></div></div>
+    <div class="kpis" id="kpis"></div>
+  </div>
+  <div class="ctl">
+    <button id="bRestart" title="Reiniciar">⏮ Reiniciar</button>
+    <button id="bBack" title="Voltar 15 min">−15 min</button>
+    <button id="bPlay" class="play">▶ Iniciar</button>
+    <button id="bStep" title="Avançar 15 min">+15 min</button>
+    <span class="sep"></span>
+    <span class="lbl">Velocidade</span>
+    <select id="sVel">
+      <option value="5">5 min/s</option><option value="15">15 min/s</option><option value="30">30 min/s</option>
+      <option value="60" selected>1 h/s</option><option value="180">3 h/s</option><option value="360">6 h/s</option><option value="720">12 h/s</option>
+    </select>
+    <span class="sep"></span>
+    <select id="sEv">
+      <option value="ESPERA_CAMINHAO_INICIO">Próxima: colheitadeira sem caminhão</option>
+      <option value="FILA">Próxima: fila na unidade ≥ 2</option>
+      <option value="FALHA">Próxima: falha mecânica</option>
+      <option value="PARADA_CLIMA">Próxima: parada por clima</option>
+      <option value="TALHAO_CONCLUIDO">Próximo: talhão concluído</option>
+    </select>
+    <button id="bEv">Ir ⏭</button>
+    <span class="sep"></span>
+    <input type="range" id="rT" min="0" max="100" step="1" value="0">
+  </div>
+  <div class="main">
+    <div class="cvwrap" id="wrap"><canvas id="cv"></canvas><div id="tip"></div></div>
+    <div class="side"><div class="ttl">Eventos registrados pelo simulador</div><div id="ticker"></div>
+      <div class="prov">Posições e cores derivadas dos segmentos de estado da simulação (semente fixa). Viagens interpoladas pelo tempo do próprio segmento.</div></div>
+  </div>
+  <div class="legend" id="legend"></div>
+</div>
+<script>
+const P = __PAYLOAD__;
+const ST = P.estados.map(s => s.id), COR = P.estados.map(s => s.cor), ROT = P.estados.map(s => s.rotulo);
+const SI = Object.fromEntries(ST.map((s, i) => [s, i]));
+const cv = document.getElementById('cv'), ctx = cv.getContext('2d'), wrap = document.getElementById('wrap'), tip = document.getElementById('tip');
+let W = 0, H = 0, t = Math.max(0, P.t_inicio - 150), playing = false, last = null, hits = [];
+const T_MAX = P.t_fim;
+
+function bs(a, x) { let lo = 0, hi = a.length - 1, r = -1; while (lo <= hi) { const m = (lo + hi) >> 1; if (a[m][0] <= x) { r = m; lo = m + 1; } else hi = m - 1; } return r; }
+function segAt(segs, x) { const i = bs(segs, x); if (i < 0) return null; const s = segs[i]; return x < s[1] ? s : null; }
+function valAt(ser, x) { const i = bs(ser, x); return i < 0 ? 0 : ser[i][1]; }
+function inWin(w, x) { for (const p of w) { if (x >= p[0] && x < p[1]) return true; if (p[0] > x) break; } return false; }
+function rel(x) { const d = Math.floor(x / 1440) + 1, r = x - (d - 1) * 1440, h = Math.floor(r / 60), m = Math.floor(r - h * 60); return `D${d} ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; }
+function fmt(v, c = 0) { return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: c, maximumFractionDigits: c }); }
+
+// ------------------------------------------------------------------ layout
+let F = {}, J, G, U, PITS = [], QUEUE0, PARK0;
+function layout() {
+  const dpr = window.devicePixelRatio || 1;
+  W = wrap.clientWidth; H = wrap.clientHeight;
+  cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const fw = Math.max(92, Math.min(128, W * 0.105)), fh = 64;
+  const x0 = 18, x1 = W * 0.60 - fw - 10, y0 = 40, y1 = H - fh - 64;
+  F = {};
+  for (const c of P.campos) F[c.id] = { x: x0 + c.x * (x1 - x0), y: y0 + c.y * (y1 - y0), w: fw, h: fh, c };
+  J = { x: W * 0.64, y: H * 0.50 }; G = { x: W * 0.695, y: H * 0.50 };
+  U = { x: W * 0.695, y: 26, w: W * 0.305 - 12, h: H - 52 };
+  PITS = []; const n = P.unidade.moegas;
+  for (let i = 0; i < n; i++) PITS.push({ x: U.x + U.w - 64, y: U.y + 64 + i * Math.min(42, (U.h * 0.45) / n) });
+  QUEUE0 = { x: U.x + 16, y: U.y + 74 }; PARK0 = { x: U.x + 16, y: U.y + U.h - 70 };
+}
+function anchor(id) { if (id === 'UNIDADE' || !id) return { x: G.x, y: G.y }; const f = F[id]; return { x: f.x + f.w, y: f.y + f.h / 2 }; }
+function center(id) { const f = F[id]; return { x: f.x + f.w / 2, y: f.y + f.h / 2 }; }
+function lerp(a, b, s) { return { x: a.x + (b.x - a.x) * s, y: a.y + (b.y - a.y) * s }; }
+function along(pts, s) { // posição em fração s ao longo de uma polilinha
+  let L = 0; const d = []; for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y); d.push(l); L += l; }
+  let alvo = s * L; for (let i = 1; i < pts.length; i++) { if (alvo <= d[i - 1] || i === pts.length - 1) return lerp(pts[i - 1], pts[i], d[i - 1] ? Math.min(1, alvo / d[i - 1]) : 1); alvo -= d[i - 1]; }
+  return pts[pts.length - 1];
+}
+function rota(o, de) {
+  if (o === 'UNIDADE') return [{ x: G.x, y: G.y }, J, anchor(de)];
+  if (de === 'UNIDADE') return [anchor(o), J, { x: G.x, y: G.y }];
+  const a = F[o], b = F[de]; return [{ x: a.x + a.w / 2, y: a.y + a.h }, { x: b.x + b.w / 2, y: b.y + b.h }];
+}
+
+// ------------------------------------------------------------------ desenho
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function txt(s, x, y, cor = '#E4EAEF', tam = 11, peso = 400, al = 'left') { ctx.fillStyle = cor; ctx.font = `${peso} ${tam}px Inter, Segoe UI, sans-serif`; ctx.textAlign = al; ctx.fillText(s, x, y); }
+
+function truckIcon(x, y, est, carga, cap, id, extra) {
+  const w = 15, h = 9;
+  rr(x, y, w, h, 2); ctx.fillStyle = COR[est]; ctx.fill();
+  if (cap > 0 && carga > 0) { ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x + 2, y + h - 3, (w - 4) * Math.min(1, carga / cap), 2); }
+  ctx.fillStyle = '#0b1013'; ctx.fillRect(x + w - 4, y + 1, 3, 3);
+  hits.push([x - 2, y - 2, w + 4, h + 4, `<b>${id}</b><br>${ROT[est]}${extra || ''}<br>Carga: ${fmt(carga, 1)} / ${fmt(cap, 0)} t`]);
+}
+function harvIcon(x, y, est, tanque, cap, id, extra) {
+  ctx.beginPath(); ctx.arc(x, y, 10, 0, Math.PI * 2); ctx.fillStyle = COR[est]; ctx.fill();
+  ctx.lineWidth = 3; ctx.strokeStyle = '#0b1013'; ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.stroke();
+  ctx.strokeStyle = '#F7E27A'; ctx.beginPath(); ctx.arc(x, y, 13, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, tanque / cap)); ctx.stroke();
+  txt(id, x, y + 4, '#0b1013', 10, 800, 'center');
+  hits.push([x - 14, y - 14, 28, 28, `<b>${id}</b><br>${ROT[est]}${extra || ''}<br>Tanque: ${fmt(tanque, 1)} / ${fmt(cap, 0)} t`]);
+}
+
+function draw() {
+  hits = [];
+  ctx.clearRect(0, 0, W, H);
+  const turno = inWin(P.turno, t), chuva = inWin(P.chuvas, t), secagem = !chuva && inWin(P.bloqueio, t), aberta = inWin(P.unidade.janelas, t);
+  // zona de campo
+  ctx.fillStyle = '#121a1f'; rr(8, 8, W * 0.62, H - 16, 8); ctx.fill();
+  txt('CAMPO — talhões', 20, 26, '#93A1AD', 11, 700);
+  if (!turno) { txt('fora do turno de colheita', W * 0.62 - 6, 26, '#6d7b86', 11, 500, 'right'); }
+  // estradas
+  ctx.strokeStyle = '#2a3640'; ctx.lineWidth = 2;
+  for (const id in F) { const a = anchor(id); ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo((a.x + J.x) / 2, a.y, J.x, J.y); ctx.stroke(); }
+  ctx.lineWidth = 6; ctx.strokeStyle = '#2f3c47'; ctx.beginPath(); ctx.moveTo(J.x, J.y); ctx.lineTo(G.x, G.y); ctx.stroke();
+  // talhões
+  for (const id in F) {
+    const f = F[id], c = f.c, area = valAt(c.prog, t), frac = Math.min(1, area / c.area), bloqueado = t < c.lib;
+    rr(f.x, f.y, f.w, f.h, 6); ctx.fillStyle = bloqueado ? '#1a2025' : '#1b2a22'; ctx.fill();
+    ctx.save(); rr(f.x, f.y, f.w, f.h, 6); ctx.clip();
+    ctx.fillStyle = 'rgba(214,180,74,0.55)'; ctx.fillRect(f.x, f.y, f.w * (1 - frac), f.h); // lavoura em pé
+    ctx.fillStyle = 'rgba(47,168,102,0.30)'; ctx.fillRect(f.x + f.w * (1 - frac), f.y, f.w * frac, f.h); // colhido
+    ctx.restore();
+    ctx.lineWidth = frac >= 0.999 ? 2 : 1; ctx.strokeStyle = frac >= 0.999 ? '#2FA866' : '#3a4a55'; rr(f.x, f.y, f.w, f.h, 6); ctx.stroke();
+    txt(`${c.id}`, f.x + 6, f.y + 14, '#E4EAEF', 11.5, 700);
+    txt(`${fmt(frac * 100, 0)}%`, f.x + f.w - 6, f.y + 14, frac >= 0.999 ? '#7fe0a8' : '#E4EAEF', 11, 700, 'right');
+    txt(bloqueado ? `liberado D${Math.round(c.lib / 1440) + 1}` : `${fmt(area, 0)}/${fmt(c.area, 0)} ha`, f.x + 6, f.y + f.h - 6, '#c8d2da', 10);
+    hits.push([f.x, f.y, f.w, f.h, `<b>Talhão ${c.id}</b> ${c.nome}<br>${fmt(area, 1)} de ${fmt(c.area, 1)} ha colhidos<br>Distância: ${fmt(c.dist, 1)} km · prioridade ${c.prio}`]);
+  }
+  // clima
+  if (chuva || secagem) {
+    ctx.fillStyle = chuva ? 'rgba(61,123,224,0.16)' : 'rgba(111,131,150,0.12)'; rr(8, 8, W * 0.62, H - 16, 8); ctx.fill();
+    txt(chuva ? '🌧 CHUVA — colheita suspensa' : 'Secagem pós-chuva — colheita suspensa', W * 0.31, H - 18, chuva ? '#9cc0ff' : '#b8c4cf', 12, 700, 'center');
+  } else if (!turno) { ctx.fillStyle = 'rgba(0,0,0,0.25)'; rr(8, 8, W * 0.62, H - 16, 8); ctx.fill(); }
+
+  // unidade
+  rr(U.x, U.y, U.w, U.h, 8); ctx.fillStyle = '#121a1f'; ctx.fill(); ctx.strokeStyle = '#2a3640'; ctx.lineWidth = 1; ctx.stroke();
+  txt('RECEBIMENTO', U.x + 12, U.y + 18, '#93A1AD', 11, 700);
+  txt(aberta ? '● ABERTA' : '● FECHADA', U.x + U.w - 12, U.y + 18, aberta ? '#7fe0a8' : '#ff8a85', 10.5, 800, 'right');
+  txt(`${P.unidade.moegas} moega(s) · ${fmt(P.unidade.cap, 0)} t/h`, U.x + 12, U.y + 34, '#6d7b86', 10.5);
+  txt('Fila', QUEUE0.x, QUEUE0.y - 8, '#93A1AD', 10.5, 600);
+  txt('Moegas', PITS[0].x - 4, PITS[0].y - 16, '#93A1AD', 10.5, 600);
+  for (const p of PITS) { rr(p.x - 4, p.y - 6, 50, 22, 4); ctx.strokeStyle = '#33424d'; ctx.stroke(); }
+  txt('Pátio / fora de jornada', PARK0.x, PARK0.y - 8, '#6d7b86', 10.5, 600);
+  // silos
+  for (let i = 0; i < 3; i++) { const sx = U.x + U.w - 40 - i * 28, sy = U.y + U.h - 46; rr(sx, sy, 22, 34, 10); ctx.fillStyle = '#26323b'; ctx.fill(); }
+
+  // colheitadeiras
+  const porCampo = {};
+  for (const h of P.colheitadeiras) {
+    const s = segAt(h.segs, t); const est = s ? s[2] : SI['fora_turno']; const tq = valAt(h.tanque, t);
+    let pos;
+    if (s && ST[est] === 'deslocando' && s[4] && s[5]) { pos = lerp(center(s[4]), center(s[5]), (t - s[0]) / Math.max(1e-6, s[1] - s[0])); }
+    else { const fid = (s && s[3]) || (h.segs.find(x => x[3]) || [0, 0, 0, P.campos[0].id])[3]; const k = (porCampo[fid] = (porCampo[fid] || 0) + 1) - 1; const f = F[fid]; pos = { x: f.x + 20 + k * 30, y: f.y + f.h / 2 + 4 }; }
+    harvIcon(pos.x, pos.y, est, tq, h.cap, h.id, s && s[3] ? ` · talhão ${s[3]}` : '');
+  }
+  // caminhões
+  const noCampo = {}, fila = [], moega = [], patio = [];
+  const ordem = { carregando: 0, em_carregamento: 1, manobra: 2, aguardando_carregamento: 3 };
+  for (const c of P.caminhoes) {
+    const s = segAt(c.segs, t); const est = s ? s[2] : SI['fora_jornada']; const nome = ST[est]; const carga = valAt(c.carga, t);
+    if (s && (nome === 'transporte_carregado' || nome === 'retorno_vazio') && s[4] && s[5]) {
+      const p = along(rota(s[4], s[5]), (t - s[0]) / Math.max(1e-6, s[1] - s[0]));
+      truckIcon(p.x - 7, p.y - 5, est, carga, c.cap, c.id, ` · ${s[4]} → ${s[5]}`);
+    } else if (nome === 'fila_descarga' || nome === 'fila_unidade_fechada') fila.push([s[0], c, est, carga]);
+    else if (nome === 'descarregando') moega.push([s[0], c, est, carga]);
+    else if (s && s[3] && F[s[3]] && nome !== 'concluido') (noCampo[s[3]] = noCampo[s[3]] || []).push([ordem[nome] ?? 5, s[0], c, est, carga]);
+    else patio.push([c.id, c, est, carga]);
+  }
+  for (const fid in noCampo) {
+    const f = F[fid]; noCampo[fid].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    noCampo[fid].forEach((e, i) => truckIcon(f.x + 4 + (i % 6) * 18, f.y + f.h + 5 + Math.floor(i / 6) * 12, e[3], e[4], e[2].cap, e[2].id, ` · talhão ${fid}`));
+  }
+  fila.sort((a, b) => a[0] - b[0]);
+  fila.forEach((e, i) => truckIcon(QUEUE0.x + (i % 7) * 18, QUEUE0.y + Math.floor(i / 7) * 14, e[2], e[3], e[1].cap, e[1].id, ` · posição ${i + 1} na fila`));
+  moega.sort((a, b) => a[0] - b[0]);
+  moega.forEach((e, i) => { const p = PITS[Math.min(i, PITS.length - 1)]; truckIcon(p.x + 2, p.y - 1, e[2], e[3], e[1].cap, e[1].id, ` · moega ${i + 1}`); });
+  patio.forEach((e, i) => truckIcon(PARK0.x + (i % 8) * 18, PARK0.y + Math.floor(i / 8) * 14, e[2], e[3], e[1].cap, e[1].id, ''));
+  if (fila.length >= 2) txt(`${fila.length} caminhões aguardando`, QUEUE0.x, QUEUE0.y + 14 * Math.ceil(fila.length / 7) + 12, '#ff8a85', 11, 700);
+  // fluxo
+  const k = Math.min(P.serie.colhido.length - 1, Math.max(0, Math.floor(t / P.passo)));
+  txt(`em trânsito: ${fmt(P.serie.transito[k], 1)} t`, (J.x + G.x) / 2, G.y - 12, '#9cc0ff', 10.5, 600, 'center');
+  txt(`recebido: ${fmt(P.serie.entregue[k], 0)} t`, U.x + 12, U.y + U.h - 12, '#7fe0a8', 11, 700);
+}
+
+// ------------------------------------------------------------------ painel
+const kEl = document.getElementById('kpis');
+function kpis() {
+  const k = Math.min(P.serie.colhido.length - 1, Math.max(0, Math.floor(t / P.passo))), s = P.serie;
+  let area = 0; for (const c of P.campos) area += valAt(c.prog, t);
+  const itens = [
+    ['Colhido', fmt(s.colhido[k], 0), 't', ''], ['Entregue', fmt(s.entregue[k], 0), 't', ''],
+    ['Área concluída', fmt(area / P.area_total * 100, 1), '%', ''], ['Em tanques', fmt(s.tanques[k], 1), 't', ''],
+    ['Caminhões no campo', fmt(s.campo[k], 1), 't', ''], ['Em trânsito', fmt(s.transito[k], 1), 't', ''],
+    ['Fila na unidade', fmt(s.fila_n[k], 0), `cam. · ${fmt(s.fila_t[k], 0)} t`, s.fila_n[k] >= 3 ? 'critico' : s.fila_n[k] >= 1 ? 'alerta' : ''],
+    ['Colheitadeiras sem caminhão', fmt(s.colh_aguard[k], 0), 'máq.', s.colh_aguard[k] >= 1 ? 'critico' : ''],
+  ];
+  kEl.innerHTML = itens.map(i => `<div class="k ${i[3]}"><div class="l">${i[0]}</div><div class="v">${i[1]}<small>${i[2]}</small></div></div>`).join('');
+  document.getElementById('relogio').textContent = rel(t);
+  const cond = [];
+  if (inWin(P.chuvas, t)) cond.push('chuva'); else if (inWin(P.bloqueio, t)) cond.push('secagem');
+  cond.push(inWin(P.turno, t) ? 'turno de colheita' : 'fora do turno');
+  if (!inWin(P.unidade.janelas, t)) cond.push('unidade fechada');
+  if (t >= T_MAX) cond.push(P.concluida ? 'operação concluída' : 'fim da janela');
+  document.getElementById('cond').textContent = cond.join(' · ');
+}
+const tk = document.getElementById('ticker');
+const CORES_EV = { ESPERA_CAMINHAO_INICIO: '#F0A73A', FALHA: '#D04BC4', FALHA_INFORMADA: '#D04BC4', PARADA_CLIMA: '#6F8396', TALHAO_CONCLUIDO: '#2FA866', OPERACAO_CONCLUIDA: '#2FA866', CHEGADA_UNIDADE: '#3D7BE0', SAIDA_CAMPO: '#3D7BE0', FIM_DESCARGA: '#38B6C4' };
+let ultimoIdx = -2;
+function ticker() {
+  const i = bs(P.eventos, t); if (i === ultimoIdx) return; ultimoIdx = i;
+  const out = []; for (let j = i; j >= 0 && out.length < 14; j--) { const e = P.eventos[j];
+    out.push(`<div class="ev" style="border-left-color:${CORES_EV[e[1]] || '#33424d'}"><span class="t">${rel(e[0])}</span><span class="r">${e[2]}</span>${e[3]}</div>`); }
+  tk.innerHTML = out.join('') || '<div class="ev">Nenhum evento até este instante.</div>';
+}
+document.getElementById('legend').innerHTML = P.estados.filter(s => !['concluida', 'concluido'].includes(s.id))
+  .map(s => `<span><i style="background:${s.cor}"></i>${s.rotulo}</span>`).join('') + '<span><i style="background:#F7E27A"></i>Anel: nível do tanque</span>';
+
+// ------------------------------------------------------------------ controles
+const rT = document.getElementById('rT'), bPlay = document.getElementById('bPlay'), sVel = document.getElementById('sVel');
+rT.max = Math.ceil(T_MAX);
+function render() { rT.value = t; kpis(); ticker(); draw(); }
+function setPlay(v) { playing = v && t < T_MAX; bPlay.textContent = playing ? '⏸ Pausar' : (t >= T_MAX ? '✓ Fim' : '▶ Iniciar'); last = null; if (playing) requestAnimationFrame(loop); }
+function loop(ts) { if (!playing) return; if (last !== null) { t = Math.min(T_MAX, t + (ts - last) / 1000 * Number(sVel.value)); } last = ts; render(); if (t >= T_MAX) { setPlay(false); return; } requestAnimationFrame(loop); }
+bPlay.onclick = () => setPlay(!playing);
+document.getElementById('bRestart').onclick = () => { t = Math.max(0, P.t_inicio - 150); setPlay(false); render(); };
+document.getElementById('bStep').onclick = () => { t = Math.min(T_MAX, t + 15); render(); };
+document.getElementById('bBack').onclick = () => { t = Math.max(0, t - 15); render(); };
+rT.oninput = () => { t = Number(rT.value); render(); };
+document.getElementById('bEv').onclick = () => {
+  const tipo = document.getElementById('sEv').value; let alvo = null;
+  if (tipo === 'FILA') { const s = P.serie.fila_n; for (let k = Math.floor(t / P.passo) + 1; k < s.length; k++) if (s[k] >= 2) { alvo = k * P.passo; break; } }
+  else { for (const e of P.eventos) if (e[0] > t + 0.01 && (e[1] === tipo || (tipo === 'FALHA' && e[1] === 'FALHA_INFORMADA'))) { alvo = e[0]; break; } }
+  if (alvo === null) { document.getElementById('cond').textContent = 'Nenhuma ocorrência posterior deste tipo'; return; }
+  t = alvo + 0.01; setPlay(false); render();
+};
+cv.addEventListener('mousemove', ev => {
+  const r = cv.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
+  for (let i = hits.length - 1; i >= 0; i--) { const h = hits[i]; if (x >= h[0] && x <= h[0] + h[2] && y >= h[1] && y <= h[1] + h[3]) {
+    tip.innerHTML = h[4]; tip.style.display = 'block'; tip.style.left = Math.min(x + 14, W - 250) + 'px'; tip.style.top = (y + 12) + 'px'; return; } }
+  tip.style.display = 'none';
+});
+cv.addEventListener('mouseleave', () => tip.style.display = 'none');
+window.addEventListener('resize', () => { layout(); render(); });
+layout(); render();
+</script>
+</body>
+</html>

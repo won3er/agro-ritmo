@@ -1,0 +1,214 @@
+{
+  "nome": "Exemplo — Colheita de soja (sintético)",
+  "descricao": "Cenário sintético de exemplo: valores ilustrativos, não são médias oficiais do setor nem dados de uma fazenda real.",
+  "cultura": "soja",
+  "cultura_spec": null,
+  "talhoes": [
+    {
+      "id": "T01",
+      "nome": "Sede Norte",
+      "area_ha": 180.0,
+      "produtividade_sc_ha": 64.0,
+      "prioridade": 1,
+      "distancia_km": 9.0,
+      "x_km": 2.0,
+      "y_km": 8.0,
+      "disponivel_a_partir_dia": 1
+    },
+    {
+      "id": "T02",
+      "nome": "Baixada",
+      "area_ha": 220.0,
+      "produtividade_sc_ha": 58.0,
+      "prioridade": 2,
+      "distancia_km": 14.0,
+      "x_km": 6.0,
+      "y_km": 11.0,
+      "disponivel_a_partir_dia": 1
+    },
+    {
+      "id": "T03",
+      "nome": "Espigão",
+      "area_ha": 160.0,
+      "produtividade_sc_ha": 70.0,
+      "prioridade": 1,
+      "distancia_km": 12.0,
+      "x_km": 9.0,
+      "y_km": 5.0,
+      "disponivel_a_partir_dia": 1
+    },
+    {
+      "id": "T04",
+      "nome": "Retiro",
+      "area_ha": 240.0,
+      "produtividade_sc_ha": 61.0,
+      "prioridade": 3,
+      "distancia_km": 22.0,
+      "x_km": 15.0,
+      "y_km": 12.0,
+      "disponivel_a_partir_dia": 1
+    },
+    {
+      "id": "T05",
+      "nome": "Cabeceira",
+      "area_ha": 200.0,
+      "produtividade_sc_ha": 55.0,
+      "prioridade": 4,
+      "distancia_km": 26.0,
+      "x_km": 18.0,
+      "y_km": 4.0,
+      "disponivel_a_partir_dia": 1
+    },
+    {
+      "id": "T06",
+      "nome": "Pivô Leste",
+      "area_ha": 120.0,
+      "produtividade_sc_ha": 72.0,
+      "prioridade": 2,
+      "distancia_km": 17.0,
+      "x_km": 12.0,
+      "y_km": 0.0,
+      "disponivel_a_partir_dia": 4
+    }
+  ],
+  "colheitadeiras": [
+    {
+      "id": "C1",
+      "nome": "Colheitadeira 1",
+      "modelo": "Classe VII (exemplo)",
+      "capacidade_campo_ha_h": 7.5,
+      "eficiencia_campo": 0.75,
+      "capacidade_tanque_t": 11.0,
+      "tempo_descarga_tanque_min": 2.5,
+      "velocidade_deslocamento_km_h": 15.0,
+      "disponibilidade_mecanica": 0.95,
+      "mttr_h": 2.5,
+      "parada_programada_min_dia": 30.0,
+      "custo_fixo_h": 250.0,
+      "custo_variavel_h": 150.0,
+      "consumo_l_h": 35.0
+    },
+    {
+      "id": "C2",
+      "nome": "Colheitadeira 2",
+      "modelo": "Classe VII (exemplo)",
+      "capacidade_campo_ha_h": 7.5,
+      "eficiencia_campo": 0.75,
+      "capacidade_tanque_t": 11.0,
+      "tempo_descarga_tanque_min": 2.5,
+      "velocidade_deslocamento_km_h": 15.0,
+      "disponibilidade_mecanica": 0.95,
+      "mttr_h": 2.5,
+      "parada_programada_min_dia": 30.0,
+      "custo_fixo_h": 250.0,
+      "custo_variavel_h": 150.0,
+      "consumo_l_h": 35.0
+    },
+    {
+      "id": "C3",
+      "nome": "Colheitadeira 3",
+      "modelo": "Classe VI (exemplo)",
+      "capacidade_campo_ha_h": 6.0,
+      "eficiencia_campo": 0.7,
+      "capacidade_tanque_t": 9.0,
+      "tempo_descarga_tanque_min": 2.2,
+      "velocidade_deslocamento_km_h": 15.0,
+      "disponibilidade_mecanica": 0.9,
+      "mttr_h": 3.0,
+      "parada_programada_min_dia": 30.0,
+      "custo_fixo_h": 210.0,
+      "custo_variavel_h": 160.0,
+      "consumo_l_h": 32.0
+    }
+  ],
+  "frota": [
+    {
+      "id": "CAR",
+      "nome": "Carreta graneleira",
+      "quantidade": 4,
+      "capacidade_t": 32.0,
+      "velocidade_carregado_km_h": 38.0,
+      "velocidade_vazio_km_h": 50.0,
+      "tempo_manobra_min": 3.0,
+      "disponibilidade_mecanica": 0.97,
+      "mttr_h": 3.0,
+      "custo_fixo_h": 115.0,
+      "custo_variavel_km": 1.5,
+      "consumo_km_l": 2.2
+    },
+    {
+      "id": "TRK",
+      "nome": "Caminhão truck",
+      "quantidade": 2,
+      "capacidade_t": 15.0,
+      "velocidade_carregado_km_h": 42.0,
+      "velocidade_vazio_km_h": 55.0,
+      "tempo_manobra_min": 2.0,
+      "disponibilidade_mecanica": 0.97,
+      "mttr_h": 2.0,
+      "custo_fixo_h": 85.0,
+      "custo_variavel_km": 1.0,
+      "consumo_km_l": 3.2
+    }
+  ],
+  "recebimento": {
+    "nome": "Armazém (exemplo)",
+    "n_moegas": 2,
+    "capacidade_t_h": 120.0,
+    "tempo_fixo_min": 10.0,
+    "hora_abertura": 6.0,
+    "hora_fechamento": 22.0,
+    "custo_recebimento_t": 0.0
+  },
+  "janela": {
+    "colheita_inicio_h": 8.0,
+    "colheita_fim_h": 19.0,
+    "caminhoes_inicio_h": 6.0,
+    "caminhoes_fim_h": 22.0,
+    "horizonte_dias": 25,
+    "data_alvo_dias": 12.0
+  },
+  "clima": {
+    "eventos_chuva": [
+      {
+        "dia": 3,
+        "hora_inicio": 13.0,
+        "duracao_h": 4.0
+      }
+    ],
+    "prob_chuva_dia": 0.0,
+    "duracao_media_chuva_h": 3.0,
+    "espera_pos_chuva_h": 2.0
+  },
+  "custos": {
+    "preco_diesel_l": 6.1,
+    "outros_custos": [
+      {
+        "nome": "Equipe de apoio e supervisão",
+        "tipo": "por_dia",
+        "valor": 950.0
+      },
+      {
+        "nome": "Mobilização de equipamentos",
+        "tipo": "fixo",
+        "valor": 4500.0
+      }
+    ],
+    "valor_saca": 120.0
+  },
+  "eventos": [],
+  "simulacao": {
+    "semente": 42,
+    "variabilidade_cv": 0.1,
+    "falhas_aleatorias": true,
+    "descarregar_fim_turno": true,
+    "modo_alocacao": "pool",
+    "alocacao": {},
+    "alocacao_caminhoes": {},
+    "regra_sequencia": "prioridade",
+    "plano_sequencia": {},
+    "ajuda_entre_colheitadeiras": true
+  },
+  "origem_dados": "exemplo_sintetico",
+  "proveniencia": {}
+}
